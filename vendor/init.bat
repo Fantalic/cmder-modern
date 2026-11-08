@@ -383,6 +383,12 @@ if defined CMDER_USER_BIN (
 )
 %lib_path% enhance_path "%CMDER_ROOT%" append
 
+:: Fork guarantee: bundled modern CLIs must shadow old system copies (e.g. an
+:: older Chocolatey fzf/rg/fd), which can sit earlier in PATH depending on how
+:: the recursive enhance above ordered things. Prepend our tool dirs last so
+:: they win the "first match" resolution.
+set "PATH=%CMDER_ROOT%\bin;%CMDER_ROOT%\vendor\bin;%PATH%"
+
 :: Drop *.bat and *.cmd files into "%CMDER_ROOT%\config\profile.d"
 :: to run them at startup.
 %lib_profile% run_profile_d "%CMDER_ROOT%\config\profile.d"
@@ -449,6 +455,10 @@ if exist "%GIT_INSTALL_ROOT%\post-install.bat" (
     "%GIT_INSTALL_ROOT%\git-cmd.exe" --no-needs-console --no-cd --command=post-install.bat
     popd
 )
+
+:: One-time per-user install of the bundled Nerd Font so modern CLIs (and the
+:: prompt) render their glyphs instead of empty boxes. Cheap (stamp guarded).
+call "%CMDER_ROOT%\vendor\bin\cmder_font.cmd"
 
 :: Set home path
 if not defined HOME set "HOME=%USERPROFILE%"

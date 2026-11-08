@@ -34,3 +34,8 @@ color.doskey = yellow
 # name: Show a suggestion in a muted color
 # type: boolean
 autosuggest.inline
+
+# Modern auto-suggested command line as you type. Applies the classic
+# completion-engine from below while keeping tab-completion behavior intact.
+autosuggest.enable = True
+autosuggest.strategy = history popups files_end_with completion

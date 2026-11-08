@@ -6,8 +6,9 @@
 ;= Add aliases below here
 e.=explorer .
 gl=git log --oneline --all --graph --decorate  $*
-l=ls --show-control-chars -CFGNhp --color --ignore={"NTUSER.DAT*","ntuser.dat*"} $*
-ls=ls --show-control-chars -F --color $*
+l=eza -l --header --git --icons --group-directories-first $*
+ls=eza --icons --show-control-chars -F $*
+cat=bat --paging=never $*
 pwd=cd
 clear=cls
 unalias=alias /d $1
