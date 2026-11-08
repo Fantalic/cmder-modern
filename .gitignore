@@ -43,6 +43,7 @@ config/*
 config_user/*
 
 Thumbs.db
+Notes.txt
 *.exe
 *.dll
 build/
