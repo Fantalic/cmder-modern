@@ -1,11 +1,17 @@
-"""Icon-inventory probe: prints the full set of shape/spinner/icon codepoints
-that modern TUIs (opencode,再度 any ANSI/VT app) emit, grouped so a human can
-eyeball which glyph designs render off-grid in ConEmu.  Any offender becomes
-an entry in scripts\\patch_fonts.py STRIP (the fork ships a "curated" font:
-strip the bad designs, GDI font-linking then picks Windows' clean Segoe UI
-Symbol designs - no engine changes needed).
+"""Icon-grid probe v2: prints every candidate icon wrapped in hard vertical
+bars. The bars are drawn with a codepoint we treat as grid-anchor (│, U+2502,
+which the vendored font renders correctly); every glyph row contains the icon
+repeated 6x between bars. Any per-glyph advance error accumulates 6x and is
+visible as ragged right edge against the closing bar. Blank/tofu icons show
+as □-shaped hollows instantly.
 
-Run inside a fork console:  python scripts\\show_glyphs.py
+Every group gets a distinct RGB foreground so rows don't blend; the ruler
+column is per group colored for eyeballing.
+
+Report only entries where the closing bar looks ragged or an icon shows a
+hollow: that's the codepoint for the strip/transplant list.
+
+Run:  python scripts\\show_glyphs.py
 """
 import sys
 
@@ -15,26 +21,35 @@ except AttributeError:
     pass
 
 GROUPS = [
-    ("opencode spinner (blocks style)", ["\u2588", "\u2584", "\u2580", "\u2590", "\u258c", "\u25a0", "\u2b1d"]),
-    ("opencode spinner (diamonds style)", ["\u2b25", "\u25c6", "\u2b29", "\u2b2a", "\u00b7"]),
-    ("message-badge shapes", ["\u25a3", "\u25a1", "\u25a2"]),
-    ("tool-row icons", ["\u0024", "\u2699", "\u2731", "\u25c8", "\u2190", "\u2192", "\u2713", "\u2717", "\u2502", "\u2726", "\u2726"]),
-    ("U+2B00 block suite (symbols for legacy computing)", [chr(c) for c in range(0x2b00, 0x2b1f, 2)] + ["\u2b1d"]),
-    ("braille spinner set", ["\u280b", "\u2817", "\u2826", "\u2815", "\u2817", "\u2803", "\u2812", "\u2814", "\u2816", "\u2821", "\u2810", "\u2822", "\u2813", "\u2812", "\u2814", "\u2802"]),
-    ("box drawing (borders/frames)", ["\u250c", "\u2500", "\u2510", "\u2514", "\u2534", "\u251c", "\u2524", "\u252c", "\u253c", "\u255d", "\u2554", "\u2550", "\u2551"]),
-    ("arrows / misc from common CLIs", ["\u2190", "\u2192", "\u2191", "\u2193", "\u21b3", "\u2691", "\u26a0", "\u2705", "\u274c", "\u2713"]),
+    ("opencode spinner (blocks)", (255, 96, 64), [0x2588, 0x2584, 0x2580, 0x2590, 0x258C, 0x25A0, 0x2B1D]),
+    ("opencode spinners (diamonds)", (0, 255, 96), [0x2B25, 0x25C6, 0x2B29, 0x2B2A, 0xB7]),
+    ("badge shapes", (255, 0, 255), [0x25A3, 0x25A1, 0x25A2]),
+    ("tool-row icons", (0, 255, 255), [0x24, 0x2699, 0x2731, 0x25C8, 0x2190, 0x2192, 0x2713, 0x2717, 0x2502, 0x2726]),
+    ("2B00 block suite", (255, 255, 0), [0x2B00, 0x2B02, 0x2B04, 0x2B06, 0x2B08, 0x2B0A, 0x2B0C, 0x2B0E, 0x2B10, 0x2B1A, 0x2B12, 0x2B14, 0x2B16, 0x2B18, 0x2B1A, 0x2B1C]),
+    ("braille", (255, 255, 255), [0x280B, 0x2817, 0x2826, 0x2815, 0x2803, 0x2812, 0x2814, 0x2816, 0x2821, 0x2810, 0x2822, 0x2813]),
+    ("box drawing", (0, 192, 255), [0x250C, 0x2500, 0x2510, 0x2514, 0x251C, 0x2524, 0x252C, 0x253C, 0x255D, 0x2554, 0x2550, 0x2551]),
+    ("misc cli icons", (255, 128, 0), [0x2191, 0x2193, 0x21B3, 0x2691, 0x26A0, 0x2705, 0x274C, 0x2718, 0x23CE, 0x23FA, 0x23F5, 0x2714, 0x2B95, 0x21BB, 0x279C, 0x27A4]),
 ]
 
-for title, chars in GROUPS:
-    print("\u001b[36m== %s\u001b[0m" % title)
-    line = "   "
-    for ch in chars:
-        cp = "U+%04X" % ord(ch)
-        line += "%s %s   " % (ch, cp)
-        if len(line) > 150:
-            print(line)
-            line = "   "
-    if line.strip():
-        print(line)
-print("\nWhich designs look WRONG (inner shapes off-grid, clipped, squashed)?")
-print("Report the U+XXXX names - each gets one line in scripts\\patch_fonts.py STRIP.")
+BAR = "\u2502"
+RST = "\x1b[0m"
+
+
+def fg(r, g, b):
+    return "\x1b[38;2;%d;%d;%dm" % (r, g, b)
+
+
+def main():
+    print("icon-grid probe v2. lines: [bar] U+XXXX [bar] glyph*6 [bar]  <- ragged edge at final bar = advance off-grid")
+    for title, rgb, cps in GROUPS:
+        c = fg(*rgb)
+        print("")
+        print(c + "=== %s ===" % title + RST)
+        for cp in cps:
+            run = chr(cp) * 6
+            lab = "U+%04X" % cp
+            print(c + BAR + RST + " %-10s " % lab + c + BAR + RST + " " + c + run + RST + " " + c + BAR + RST)
+
+
+if __name__ == "__main__":
+    main()
