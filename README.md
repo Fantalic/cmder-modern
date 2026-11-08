@@ -16,6 +16,9 @@ This is an unofficial, modernized fork of Cmder. It keeps the ConEmu + Clink cor
   (no admin rights), so Braille spinners, box drawing, Nerd icons and block art render pixel-perfect on first launch;
   JetBrains Mono NF ships as an opt-in alternative.
 - UTF-8 output defaults (`CmdOutputCP = 65001`) and inline autosuggest enabled.
+- Mouse works inside full-screen TUIs: events are forwarded to apps that request them, and a small clipboard shim
+  (`bin\powershell.exe`) plus a resident console-mode guard keep tools like opencode alive even after their
+  console children (hooks, clipboard helpers) come and go.
 - Modern CLI tools shipped in `bin\`: fzf, eza, bat, ripgrep, fd, zoxide; wired via clink-fzf (Ctrl+T / Ctrl+R) and
   refreshed default aliases.
 - Redesigned icons generated reproducibly by `scripts/generate_icons.py`.

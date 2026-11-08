@@ -7,9 +7,21 @@ launcher
 .vscode
 .idea
 *.md
+.ai
+AGENTS.md
+Notes.txt
 build
 scripts
 config\.history
+config\clink.log
+config\clink_errorlevel*
+config\clink_history*
+config\clink_settings
+config\cmder_prompt_config.lua
+config\fonts_installed
+config\user-ConEmu.xml
+config\user_aliases.cmd
+config\user_profile.cmd
 packignore
 Thumbs.db
 icons\cmder_icon.psd
@@ -25,3 +37,4 @@ vendor\git-prompt.sh
 config\user-*
 clink_history*
 *.log
+bin\powershell_shim.c
