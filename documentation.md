@@ -42,7 +42,10 @@ the 1-px seams, or use other renderers (Windows Terminal handles it fine).
    - The launcher (`cmder.exe`) runs the same registration *before* ConEmu starts, so even the very first session renders
      glyphs (see `RegisterBundledFonts` in `launcher/src/CmderLauncher.cpp`).
 3. **`vendor/ConEmu.xml.default`** — `FontName`/`ConsoleFontName` = `CaskaydiaCove NF`, `FontName2` = `JetBrainsMono NF`
-   (fallback), `CmdOutputCP` = 65001. ANSI processing (`ProcessAnsi`) was already on upstream.
+   (fallback), `CmdOutputCP` = 65001, `DisableMouse` = 0 (mouse events forwarded to apps that request mouse tracking —
+   wheel scrolling, marking and clicking inside TUIs like opencode/micro; plain text selection keeps working via the
+   ConEmu selection modifier, Shift + drag, whenever the app owns the mouse). ANSI processing (`ProcessAnsi`) was already
+   on upstream.
 4. **`vendor/clink_settings.default`** — enables inline autosuggest (`autosuggest.enable = True`, strategy
    `history popups files_end_with completion`) on top of upstream defaults. Tab-completion behavior unchanged.
 5. **Modern CLI toolset, vendored flat in `bin\`** (upstream's documented runtime drop-in; `.gitignore`d):
