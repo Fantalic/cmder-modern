@@ -8,6 +8,7 @@ __pycache__/
 bin/*
 !bin/Readme.md
 !bin/powershell_shim.c
+scripts/conemu-patch/*.stock.dll
 opt/*
 !opt/Readme.md
 

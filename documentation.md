@@ -123,14 +123,27 @@ Root-cause chain (all verified experimentally, evidence in `.ai/diagnostics/`):
    re-asserts, so after the reset the wheel/click stream stops being translated while keypresses
    (non-VT path) keep flowing.
 
-Fixes shipped in the fork:
-- **`bin/powershell.exe` shim** (source: `bin/powershell_shim.c`, static MinGW build — see below):
-  when the command line contains opencode's clipboard pattern (`Set-Clipboard` + `In.ReadToEnd` /
-  `InputEncoding`), it runs the *real* system PowerShell with `CREATE_NO_WINDOW` (its own hidden
-  console: working message pump so `Set-Clipboard` actually commits, isolated from the TUI console
-  whose state ConEmuHk resets on child exit; opencode's pipes stay connected as stdio) and returns
-  its exit code; every other invocation passes straight through with the same console. Result: no
-  console-owning child ever exits inside the TUI console, so the break never happens. The shim is
+Fixes shipped in the fork (two layers, general + specific):
+
+- **Patched `ConEmuHk64.dll` / `ConEmuHk.dll`** (root-cause fix, closes the general class):
+  rebuilt from [Maximus5/ConEmu](https://github.com/Maximus5/ConEmu) @ c8cebb9 with one behavioral
+  change: `CEAnsi::DoneTermMode()` in `DoDllStop()` runs only when the dying process is the one
+  that *itself* enabled the terminal mode (`gWasXTermModeSet[tmc_TerminalType].pid == GetCurrentProcessId()`).
+  ConEmuHk is injected into every console child; `InitTermMode()` reads the *shared* output-buffer
+  mode, so children inherit "XTerm on" and, on exit, flipped the whole console to Win32 emulation -
+  destroying the parent TUI's negotiated `?1000h…` mouse routing (upstream:
+  [Maximus5/ConEmu#2246](https://github.com/Maximus5/ConEmu/issues/2246)). Validated: wheel/selection
+  now survive unrelated console children (`cmd /c ping -n 3` inside opencode) **and** repeated
+  clipboard copies. Rebuild steps + `git apply` patch + stock backups live in
+  `scripts/conemu-patch/`; `scripts/build.ps1` auto-applies them after vendor extraction via
+  `scripts/apply_conemu_patch.ps1` (no-ops while ConEmu runs).
+- **`bin/powershell.exe` shim** (opencode-specific interception, defense in depth): when the command
+  line contains opencode's clipboard pattern (`Set-Clipboard` + `In.ReadToEnd` / `InputEncoding`), it
+  runs the *real* system PowerShell with `CREATE_NO_WINDOW` (its own hidden console: working message
+  pump so `Set-Clipboard` actually commits, isolated from the TUI console; opencode's pipes stay
+  connected as stdio) and returns its exit code; every other invocation passes straight through with
+  the same console. Without this, `powershell.exe` children attach to the TUI console and their exit
+  still hits the (stock-) upstream reset path wherever the stock hook DLL is in use. The shim is
   picked up from the fork's bin path precedence (`which("powershell.exe")` resolves to it inside
   cmder sessions). Attempted-and-rejected alternatives (silent no-op `DETACHED_PROCESS`, hostile
   OSC/DECSET injection, resize jiggle) documented below.

@@ -159,6 +159,11 @@ if (-not $noVendor) {
         Copy-Item $($saveTo + "git-prompt.sh") $($saveTo + "git-for-windows/etc/profile.d/git-prompt.sh")
     }
 
+    # Apply the patched ConEmuHk DLLs (terminal-mode child-exit guard, see
+    # scripts\conemu-patch\README.md). Keeps the parent TUI's mouse/tty state
+    # alive when unrelated console children exit. No-ops when ConEmu runs.
+    & (Join-Path $PSScriptRoot "apply_conemu_patch.ps1")
+
     Pop-Location
 }
 
