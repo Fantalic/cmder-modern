@@ -7,7 +7,7 @@
  * child-termination handling resets the shared console state and the TUI's
  * mouse forwarding dies until restart. We intercept exactly that call
  * pattern, detach ourselves from the console, run the real PowerShell
- * headless (DETACHED_PROCESS, pipes from opencode stay inherited), and
+ * with its own hidden console (CREATE_NO_WINDOW; pipes from opencode stay
  * return its exit code. Without a console attached, the real PowerShell
  * cannot be the "child that exits with terminal modes enabled", so no
  * forwarding reset occurs and the break never happens.
@@ -100,53 +100,119 @@ static int run_detached(int argc, wchar_t** argv)
 	PROCESS_INFORMATION pi = { 0 };
 	wchar_t cmdLine[MAX_PATH * 4 + 512];
 	int i;
+	int pass;
+	int firstExit = -1;
 
-	/* Drop any console ownership we inherited from the TUI console. */
-	FreeConsole();
+	/* (No FreeConsole: the child below gets its OWN hidden console via
+	 *  CREATE_NO_WINDOW - the shim itself never touches console modes.) */
 
 	wchar_t quotedReal[MAX_PATH + 4];
 	swprintf(quotedReal, MAX_PATH + 4, L"\"%s\"", g_real_ps);
-	wcscpy(cmdLine, quotedReal);
-	for (i = 1; i < argc; i++)
+
+	/* trace: every intercepted clipboard call lands in the fork diagnostics */
+	const wchar_t* tracePathW = L"E:\\_tools\\cmder_fork\\.ai\\diagnostics\\shim_trace.log";
+	HANDLE trace = CreateFileW(tracePathW, FILE_APPEND_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+	                           NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	SYSTEMTIME st;
+	GetLocalTime(&st);
+
+	for (pass = 0; pass < 3; pass++)
 	{
-		BOOL hasSpace = wcschr(argv[i], L' ') != NULL;
-		BOOL hasQuote = wcschr(argv[i], L'"') != NULL;
-		if (hasSpace || hasQuote)
+		SetLastError(0);
+		cmdLine[0] = 0;
+		lstrcatW(cmdLine, quotedReal);
+		for (i = 1; i < argc; i++)
 		{
-			wcscat(cmdLine, L" \"");
-			wcscat(cmdLine, argv[i]);
-			wcscat(cmdLine, L"\"");
+			BOOL hasSpace = wcschr(argv[i], L' ') != NULL;
+			BOOL hasQuote = wcschr(argv[i], L'"') != NULL;
+			if (hasSpace || hasQuote)
+			{
+				lstrcatW(cmdLine, L" \"");
+				lstrcatW(cmdLine, argv[i]);
+				lstrcatW(cmdLine, L"\"");
+			}
+			else
+			{
+				lstrcatW(cmdLine, L" ");
+				lstrcatW(cmdLine, argv[i]);
+			}
 		}
-		else
+
+		si.cb = sizeof(si);
+		si.dwFlags = STARTF_USESTDHANDLES;
+		si.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
+		si.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+		si.hStdError  = GetStdHandle(STD_ERROR_HANDLE);
+
+		if (trace && trace != INVALID_HANDLE_VALUE)
 		{
-			wcscat(cmdLine, L" ");
-			wcscat(cmdLine, argv[i]);
+			wchar_t line[512];
+			swprintf(line, 512, L"[%02d:%02d:%02d.%03d] detached attempt %d, argc=%d, ps=%s\n",
+			         st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, pass, argc, g_real_ps);
+			DWORD bw = 0;
+			WideCharToMultiByte(CP_UTF8, 0, line, -1, NULL, 0, NULL, NULL);
+			char* utf = (char*)malloc(WideCharToMultiByte(CP_UTF8, 0, line, -1, NULL, 0, NULL, NULL));
+			WideCharToMultiByte(CP_UTF8, 0, line, -1, utf, -1, NULL, NULL);
+			SetFilePointer(trace, 0, NULL, FILE_END);
+			WriteFile(trace, utf, (DWORD)strlen(utf), &bw, NULL);
+			free(utf);
 		}
+
+		if (!CreateProcessW(g_real_ps, cmdLine, NULL, NULL, TRUE,
+		                    CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+		                    NULL, NULL, &si, &pi))
+		{
+			if (trace && trace != INVALID_HANDLE_VALUE)
+			{
+				char line[256];
+				wsprintfA(line, "    CreateProcess FAILED err=%lu\r\n", GetLastError());
+				DWORD bw = 0;
+				SetFilePointer(trace, 0, NULL, FILE_END);
+				WriteFile(trace, line, (DWORD)strlen(line), &bw, NULL);
+			}
+			continue;
+		}
+
+		WaitForSingleObject(pi.hProcess, INFINITE);
+		DWORD exitCode = 1;
+		GetExitCodeProcess(pi.hProcess, &exitCode);
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
+
+		if (trace && trace != INVALID_HANDLE_VALUE)
+		{
+			char line[256];
+			wsprintfA(line, "    real-ps exit=%lu\r\n", exitCode);
+			DWORD bw = 0;
+			SetFilePointer(trace, 0, NULL, FILE_END);
+			WriteFile(trace, line, (DWORD)strlen(line), &bw, NULL);
+		}
+
+		if (exitCode == 0)
+			WaitForSingleObject(pi.hProcess, 0);
+		if (pass == 0)
+			firstExit = (int)exitCode;
+		if (exitCode == 0)
+			break;
+
+		/* brief settle before retry: clipboard contention in TUIs is a classic fail */
+		Sleep(150);
 	}
 
-	si.cb = sizeof(si);
-	si.dwFlags = STARTF_USESTDHANDLES;
-	si.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
-	si.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-	si.hStdError  = GetStdHandle(STD_ERROR_HANDLE);
-
-	/* DETACHED_PROCESS: real PS runs headless, keeps opencode's pipes as
-	 * stdio, and never hosts the TUI console's terminal state. */
-	if (!CreateProcessW(g_real_ps, cmdLine, NULL, NULL, TRUE,
-	                    DETACHED_PROCESS | CREATE_UNICODE_ENVIRONMENT,
-	                    NULL, NULL, &si, &pi))
+	if (trace && trace != INVALID_HANDLE_VALUE)
 	{
-		if (_wgetenv(L"POWERSHELL_SHIM_DEBUG"))
-			fwprintf(stderr, L"shim: CreateProcess(detached) failed err=%lu cmd=%s\n", GetLastError(), cmdLine);
-		return 9009;
+		char line[256];
+		wsprintfA(line, "    shim done firstExit=%d\r\n", firstExit);
+		DWORD bw = 0;
+		SetFilePointer(trace, 0, NULL, FILE_END);
+		WriteFile(trace, line, (DWORD)strlen(line), &bw, NULL);
+		CloseHandle(trace);
+		trace = INVALID_HANDLE_VALUE;
 	}
 
-	WaitForSingleObject(pi.hProcess, INFINITE);
-	DWORD exitCode = 1;
-	GetExitCodeProcess(pi.hProcess, &exitCode);
-	CloseHandle(pi.hProcess);
-	CloseHandle(pi.hThread);
-	return (int)exitCode;
+	if (firstExit < 0)
+		firstExit = 0;
+	return firstExit;
 }
 
 int wmain(int argc, wchar_t** argv)

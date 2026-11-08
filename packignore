@@ -1,4 +1,4 @@
-launcher
+﻿launcher
 .gitignore
 .gitattributes
 .git
@@ -34,7 +34,10 @@ vendor\tmp
 appveyor.yml
 vendor\cmder.sh
 vendor\git-prompt.sh
+vendor\conemu-maximus5\Logs
+vendor\conemu-maximus5\ConEmu.xml
 config\user-*
 clink_history*
 *.log
 bin\powershell_shim.c
+
