@@ -6,6 +6,21 @@ Cmder is a **software package** created out of pure frustration over absence of 
 
 ![Cmder Screenshot](http://i.imgur.com/g1nNf0I.png)
 
+## About this fork
+
+This is an unofficial, modernized fork of Cmder. It keeps the ConEmu + Clink core, and focuses on making
+*modern* Windows CLI tooling render correctly out of the box:
+
+- Updated vendored builds: Clink 1.9.35 (with prompt/output sync fixes), clink-completions 0.6.9, git-for-windows 2.56.
+- Bundled JetBrains Mono Nerd Font with silent per-user auto-registration (no admin rights), so Braille spinners,
+  box drawing and Nerd icons render on first launch.
+- UTF-8 output defaults (`CmdOutputCP = 65001`) and inline autosuggest enabled.
+- Modern CLI tools shipped in `bin\`: fzf, eza, bat, ripgrep, fd, zoxide; wired via clink-fzf (Ctrl+T / Ctrl+R) and
+  refreshed default aliases.
+- Redesigned icons generated reproducibly by `scripts/generate_icons.py`.
+
+See `documentation.md` for the full changelog, build instructions and license notes.
+
 ## Why use it
 
 The main advantage of Cmder is portability. It is designed to be totally self-contained with no external dependencies, which makes it great for **USB Sticks** or **cloud storage**. So you can carry your console, aliases and binaries (like `wget`, `curl` and `git`) with you anywhere.
