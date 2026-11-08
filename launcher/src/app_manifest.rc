@@ -1,0 +1,4 @@
+// RT_MANIFEST resource for the MinGW launcher build. The Visual Studio build
+// keeps embedding the manifest through the manifest tool instead.
+#include <winuser.h>
+1 24 "..\\src\\app.manifest"

@@ -28,7 +28,13 @@
 
 #define WIDEN2(x) L ## x
 #define WIDEN(x) WIDEN2(x)
+#if defined(_MSC_VER)
 #define __WFUNCTION__ WIDEN(__FUNCTION__)
+#else
+// MinGW does not expand __FUNCTION__ as a pasteable string literal;
+// fall back to the compile-time source file name instead.
+#define __WFUNCTION__ L"" __FILE__
+#endif
 
 #define FAIL_ON_ERROR(x) { DWORD ec; if ((ec = (x)) != ERROR_SUCCESS) { ShowErrorAndExit(ec, __WFUNCTION__, __LINE__); } }
 
@@ -82,14 +88,6 @@ void ShowErrorAndExit(DWORD ec, const wchar_t * func, int line)
 	exit(1);
 }
 
-typedef struct _option
-{
-	std::wstring name;
-	bool hasVal;
-	std::wstring value;
-	bool set;
-} option;
-
 typedef std::pair<std::wstring, std::wstring> optpair;
 
 bool FileExists(const wchar_t * filePath)
@@ -104,6 +102,89 @@ bool FileExists(const wchar_t * filePath)
 
 	return false;
 }
+
+// Copy one bundled font if the target is missing. Returns true when present.
+static bool EnsureFontCopied(const std::wstring& srcDir, const std::wstring& dstDir, const std::wstring& file)
+{
+	std::wstring dst = dstDir + L"\\" + file;
+	if (FileExists(dst.c_str()))
+	{
+		return true;
+	}
+
+	std::wstring src = srcDir + L"\\" + file;
+	if (!FileExists(src.c_str()))
+	{
+		return false;
+	}
+
+	return CopyFile(src.c_str(), dst.c_str(), TRUE) != FALSE;
+}
+
+// Register the bundled JetBrainsMono Nerd Font for the current user. The
+// registry value (HKCU) plus the file living in the user font directory is
+// the documented per-user font install on modern Windows, no admin needed.
+static void RegisterBundledFonts(const wchar_t* cmderRoot, const wchar_t* userConfigDir, const wchar_t* configDir)
+{
+	std::wstring srcDir = std::wstring(cmderRoot) + L"\\vendor\\fonts";
+	if (!FileExists((srcDir + L"\\JetBrainsMonoNerdFont-Regular.ttf").c_str()))
+	{
+		return;  // mini build without bundled fonts
+	}
+
+	wchar_t fontDir[MAX_PATH];
+	GetEnvironmentVariable(L"LOCALAPPDATA", fontDir, MAX_PATH);
+	std::wstring dstDir = std::wstring(fontDir) + L"\\Microsoft\\Windows\\Fonts";
+	CreateDirectory(dstDir.c_str(), NULL);
+
+	struct FontEntry
+	{
+		const wchar_t* file;
+		const wchar_t* regVal;
+	};
+	// nerd-fonts v3 family names are the short form ("JetBrainsMono NF"),
+	// which is also what GDI enumerates; ConEmu.xml must match this name.
+	const FontEntry fonts[] = {
+		{ L"JetBrainsMonoNerdFont-Regular.ttf",	L"JetBrainsMono NF Regular (TrueType)" },
+		{ L"JetBrainsMonoNerdFont-Bold.ttf",	L"JetBrainsMono NF Bold (TrueType)" },
+		{ L"JetBrainsMonoNerdFont-Italic.ttf",	L"JetBrainsMono NF Italic (TrueType)" },
+		{ L"JetBrainsMonoNerdFont-BoldItalic.ttf", L"JetBrainsMono NF BoldItalic (TrueType)" },
+	};
+
+	for (const FontEntry& f : fonts)
+	{
+		std::wstring dst = dstDir + L"\\" + f.file;
+		if (!EnsureFontCopied(srcDir, dstDir, f.file))
+		{
+			continue;  // best effort: skip any weight that failed to copy
+		}
+
+		RegSetKeyValueW(HKEY_CURRENT_USER,
+			L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts",
+			f.regVal, REG_SZ, dst.c_str(), (DWORD)((dst.size() + 1) * sizeof(wchar_t)));
+
+		// Make the weight visible to GDI in the current session too.
+		AddFontResourceW(dst.c_str());
+	}
+
+	// Stamp so later sessions skip straight past this block.
+	std::wstring stamp = (wcscmp(userConfigDir, configDir) != 0)
+		? (std::wstring(userConfigDir) + L"\\fonts_installed")
+		: (std::wstring(configDir) + L"\\fonts_installed");
+	HANDLE h = CreateFile(stamp.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (h != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(h);
+	}
+}
+
+typedef struct _option
+{
+	std::wstring name;
+	bool hasVal;
+	std::wstring value;
+	bool set;
+} option;
 
 std::wstring NormalizeTaskName(std::wstring taskName)
 {
@@ -460,6 +541,12 @@ void StartCmder(std::wstring  path = L"", bool is_single_mode = false, std::wstr
 	{
 		swprintf_s(args, L"%s /run {%s}", args, cmderTask.c_str());
 	}
+
+	// Fork: one-time per-user install of the bundled Nerd Font so modern CLIs
+	// and the prompt render their glyphs on the very first start. Copying to
+	// %LOCALAPPDATA%\\Microsoft\\Windows\\Fonts plus an HKCU registry value
+	// needs no admin rights on Windows 10 1809+.
+	RegisterBundledFonts(exeDir, userConfigDirPath, configDirPath);
 
 	SetEnvironmentVariable(L"CMDER_ROOT", exeDir);
 	if (wcscmp(userConfigDirPath, configDirPath) != 0)
