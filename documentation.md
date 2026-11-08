@@ -107,6 +107,50 @@ the 1-px seams, or use other renderers (Windows Terminal handles it fine).
 Naming etiquette: this fork is "a modernized fork of Cmder" — do not present it as official upstream; cmder name is
 upstream's project identity even without a formal trademark.
 
+## Mouse break inside full-screen TUIs after console children (fixed)
+
+Symptom: inside opencode, after the first copy interaction (mark + right-click, which spawns
+`powershell.exe` as a console child for the clipboard write), mouse scrolling and selection die and stay
+dead until the tab is closed. Keyboard keeps working.
+
+Root-cause chain (all verified experimentally, evidence in `.ai/diagnostics/`):
+1. opencode's clipboard write spawns `powershell.exe` as a *console child* of the TUI (`clipboard.ts`
+   `copyCommand`, spawned with piped stdio but still attaching to the TUI's console).
+2. When that child exits, ConEmu's hook DLL resets shared console state on child termination
+   (upstream clone of Maximus5/ConEmu#2246: `ConEmuHk` `DoDllStop` resets terminal-mode state while
+   the console itself keeps the old bits).
+3. opencode's TUI negotiated mouse tracking (`?1000h/1002h/1003h/1006h`) exactly once and never
+   re-asserts, so after the reset the wheel/click stream stops being translated while keypresses
+   (non-VT path) keep flowing.
+
+Fixes shipped in the fork:
+- **`bin/powershell.exe` shim** (source: `bin/powershell_shim.c`, static MinGW build — see below):
+  when the command line contains opencode's clipboard pattern (`Set-Clipboard` + `In.ReadToEnd` /
+  `InputEncoding`), it `FreeConsole()`s itself, runs the *real* system PowerShell headless
+  (`DETACHED_PROCESS`, opencode's pipes stay connected as stdio), and returns its exit code;
+  every other invocation passes straight through with the same console. Result: no console-owning
+  child ever exits inside the TUI console, so the break never happens. The shim is picked up from
+  the fork's bin path precedence (`which("powershell.exe")` resolves to it inside cmder sessions).
+- **`vendor/bin/cmder_tui_guard.py`** (optional defense-in-depth, started by `vendor/init.bat`,
+  disable with `CMDER_NO_TUI_GUARD=1`): resident watcher that re-asserts the TUI's expected console
+  input-buffer mode (`0x0208`) if any console child stomps it. Catches the shared-mode variant of
+  the break, costs nothing while no TUI runs, spawned via `vendor/bin/cmder_tui_guard.cmd`.
+
+Rebuild the shim without Visual Studio:
+```
+g++ -O1 -std=c++17 -municode -mconsole -static -DUNICODE -D_UNICODE \
+    -o bin\powershell.exe bin\powershell_shim.c -lkernel32
+```
+
+What NOT to do (failed approaches, documented to save future cycles):
+- Re-injecting the DECSET handshake from an attached *external* process does **not** revive the
+  forwarding state.
+- ConEmu's private `OSC 9;10;1` terminal-mode switch * externally * potentially re-arms
+  forwarding but registers the injecting process as the mode "enabler" and reverts the whole
+  console to plain Windows emulation when that process exits — transcript scrolling, translucent
+  panels and highlighting get wrecked (verified). External OSC injection is forbidden in this fork.
+- Resize/refresh tricks: no effect.
+
 ## Ideas parked (deliberately, in `plan` spirit)
 
 - oh-my-posh / starship prompt integration (λ prompt kept per user decision).

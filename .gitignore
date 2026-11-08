@@ -1,8 +1,13 @@
 
 ## Those files should be taken from their repositary
 
+# python caches
+__pycache__/
+*.pyc
+
 bin/*
 !bin/Readme.md
+!bin/powershell_shim.c
 opt/*
 !opt/Readme.md
 

@@ -460,6 +460,12 @@ if exist "%GIT_INSTALL_ROOT%\post-install.bat" (
 :: prompt) render their glyphs instead of empty boxes. Cheap (stamp guarded).
 call "%CMDER_ROOT%\vendor\bin\cmder_font.cmd"
 
+:: Resident TUI console-mode guard: keeps mouse forwarding alive for full
+:: screen TUIs (opencode etc.) when their console children (clipboard tools,
+:: hooks) stomp the shared console input mode. No output, zero cost while
+:: no TUI runs. Disable per session with CMDER_NO_TUI_GUARD=1.
+if not defined CMDER_NO_TUI_GUARD call "%CMDER_ROOT%\vendor\bin\cmder_tui_guard.cmd"
+
 :: Set home path
 if not defined HOME set "HOME=%USERPROFILE%"
 %print_debug% init.bat "Env Var - HOME=%HOME%"
