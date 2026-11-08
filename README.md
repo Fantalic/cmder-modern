@@ -1,8 +1,12 @@
-# Cmder
+# cmder-modern
 
-[![Join the chat at https://gitter.im/cmderdev/cmder](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/cmderdev/cmder?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Build Status](https://github.com/cmderdev/cmder/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/cmderdev/cmder/actions/workflows/build.yml?query=event%3Apush+branch%3Amaster)
+[![Build Status](https://github.com/Fantalic/cmder-modern/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/Fantalic/cmder-modern/actions/workflows/build.yml?query=event%3Apush+branch%3Amaster)
 
-Cmder is a **software package** created out of pure frustration over absence of usable console emulator on Windows. It is based on [ConEmu](https://conemu.github.io/) with *major* config overhaul, comes with a Monokai color scheme, amazing [clink](https://chrisant996.github.io/clink/) (further enhanced by [clink-completions](https://github.com/vladimir-kotikov/clink-completions)) and a custom prompt layout.
+**cmder-modern** is an unofficial, actively maintained fork of [Cmder](https://github.com/cmderdev/cmder), the Windows
+software package created out of pure frustration over the absence of a usable console emulator. It is based on
+[ConEmu](https://conemu.github.io/) with *major* config overhaul, comes with a Monokai color scheme, amazing
+[clink](https://chrisant996.github.io/clink/) (further enhanced by [clink-completions](https://github.com/vladimir-kotikov/clink-completions))
+and a custom prompt layout. This fork keeps that core and adapts it for 2026-era command-line workflows.
 
 ![Cmder Screenshot](http://i.imgur.com/g1nNf0I.png)
 
@@ -34,13 +38,13 @@ The Cmder's user interface is also designed to be more eye pleasing, and you can
 ## Installation
 ### Single User Portable Config
 
-1. Download the [latest release](https://github.com/cmderdev/cmder/releases/)
+1. Download the [latest release](https://github.com/Fantalic/cmder-modern/releases/)
 2. Extract the archive. *Note: This path should not be `C:\Program Files` or anywhere else that would require Administrator access for modifying configuration files*
 3. (optional) Place your own executable files into the `%cmder_root%\bin` folder to be injected into your PATH.
 4. Run `Cmder.exe`
 
 ### Shared Cmder install with Non-Portable Individual User Config
-1. Download the [latest release](https://github.com/cmderdev/cmder/releases/)
+1. Download the [latest release](https://github.com/Fantalic/cmder-modern/releases/)
 2. Extract the archive to a shared location.
 3. (optional) Place your own executable files and custom app folders into the `%cmder_root%\bin`. See: [bin/README.md](./bin/Readme.md)
    - This folder to be injected into your PATH by default.
@@ -288,7 +292,7 @@ If you want to run SSH agent on startup, include the line `@call "%GIT_INSTALL_R
 
 Cmder is by default shipped with a vendored Git installation.  On each instance of launching Cmder, an attempt is made to locate any other user provided Git binaries. Upon finding a `git.exe` binary, Cmder further compares its version against the vendored one _by executing_ it. The vendored `git.exe` binary is _only_ used when it is more recent than the user-installed one.
 
-You may use your favorite version of Git by including its path in the `%PATH%` environment variable.  Moreover, the **Mini** edition of Cmder (found on the [downloads page](https://github.com/cmderdev/cmder/releases)) excludes any vendored Git binaries.
+You may use your favorite version of Git by including its path in the `%PATH%` environment variable.  Moreover, the **Mini** edition of Cmder (found on the [downloads page](https://github.com/Fantalic/cmder-modern/releases/)) excludes any vendored Git binaries.
 
 ### Using external Cygwin/Babun, MSys2, WSL, or Git for Windows SDK with Cmder.
 
@@ -407,20 +411,23 @@ If you do not have a `[cmder_root]/config/user[-|_]conemu.xml`, you are running 
 
 ## Latest Builds
 
-You can download the latest successful builds of the current [`master`](https://github.com/cmderdev/cmder/tree/master) and [`development`](https://github.com/cmderdev/cmder/tree/development) branches from the **GitHub Actions > Artifacts** section following the links below:
+Per-push CI builds (launcher + vendors) are published as **GitHub Actions artifacts** of the
+[`Build Cmder`](https://github.com/Fantalic/cmder-modern/actions/workflows/build.yml?query=event%3Apush+branch%3Amaster+is%3Asuccess)
+workflow on `master`.
 
-| Branch | Build Status | Download Artifacts |
-|--------|-------------|-------------------|
-| 🔒 [`master`](https://github.com/cmderdev/cmder/tree/master) | [![master build status](https://github.com/cmderdev/cmder/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/cmderdev/cmder/actions/workflows/build.yml?query=event%3Apush+branch%3Amaster+is%3Asuccess) | [📦 Artifacts](https://github.com/cmderdev/cmder/actions/workflows/build.yml?query=event%3Apush+branch%3Amaster+is%3Asuccess) |
-| 🔧 [`development`](https://github.com/cmderdev/cmder/tree/development) | [![development build status](https://github.com/cmderdev/cmder/actions/workflows/build.yml/badge.svg?branch=development)](https://github.com/cmderdev/cmder/actions/workflows/build.yml?query=event%3Apull_request+branch%3Adevelopment+is%3Asuccess) | [📦 Artifacts](https://github.com/cmderdev/cmder/actions/workflows/build.yml?query=event%3Apull_request+branch%3Adevelopment+is%3Asuccess) |
+Official **release archives** (`cmder.zip`, `cmder_mini.zip`, `cmder.7z` + hashes, including the runtime `bin\` tools
+and the clipboard shim) are published manually on the
+[releases page](https://github.com/Fantalic/cmder-modern/releases/), because CI job artifacts intentionally exclude
+the gitignored runtime binaries — see `documentation.md` for how releases are built and verified locally.
 
 ## License
 
-All software included is bundled with own license
+All included software keeps its own license. The Cmder code is licensed under the MIT license:
 
 The MIT License (MIT)
 
 Copyright (c) 2016 Samuel Vasko
+Copyright (c) 2026 Fantalic (cmder-modern fork modifications)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

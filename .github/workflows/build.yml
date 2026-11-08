@@ -246,36 +246,7 @@ jobs:
 
         $summary | Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding utf8
 
-    - name: Create Release
-      uses: softprops/action-gh-release@v3
-      with:
-        files: |
-          build/cmder.zip
-          build/cmder.7z
-          build/cmder_mini.zip
-          build/hashes.txt
-        draft: true
-        generate_release_notes: true
-      if: startsWith(github.ref, 'refs/tags/')
-
-    - name: Summary - Release created
-      if: startsWith(github.ref, 'refs/tags/')
-      shell: pwsh
-      run: |
-        $summary = @"
-
-        ---
-
-        ### Release Information
-
-        🚀 Draft release created for tag: **``${{ github.ref_name }}``**
-
-        Release includes:
-        - Full version (``cmder.zip``, ``cmder.7z``)
-        - Mini version (``cmder_mini.zip``)
-        - File hashes (``hashes.txt``)
-
-        > ⚠️ Release is in **draft** mode. Please review and publish manually.
-        "@
-
-        $summary | Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding utf8
+    # NOTE: releases are NOT auto-created by CI on this fork. The packed
+    # archives from CI job artifacts lack the gitignored runtime binaries
+    # (bin tools, powershell shim); releases are built and published locally
+    # from a verified working tree.

@@ -1,6 +1,15 @@
 # How to contribute
 
-Unfortunately we all can't work on Cmder every day of the year, so I have decided to write some guidelines for contributing.
+Thank you for contributing to **cmder-modern**!
+
+- Contributions to this fork: open a pull request against `master` of `Fantalic/cmder-modern`.
+- Contributions to the *official* Cmder project: see the upstream guide at
+  [cmderdev/cmder](https://github.com/cmderdev/cmder/blob/master/CONTRIBUTING.md) (they prefer feature
+  branches from `master` and PRs against their `development` branch).
+- Fork-specific areas first: `documentation.md` records the fork's design decisions (fonts, shim,
+  guard, vendored tools), so reviewers can map a change to its rationale.
+
+Unfortunately we all can't work on Cmder every day of the year, so I have decided to write some guidelines for contributing upstream.
 
 If you follow them your contribution will likely be pulled in quicker.
 
