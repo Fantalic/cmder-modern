@@ -126,11 +126,14 @@ Root-cause chain (all verified experimentally, evidence in `.ai/diagnostics/`):
 Fixes shipped in the fork:
 - **`bin/powershell.exe` shim** (source: `bin/powershell_shim.c`, static MinGW build — see below):
   when the command line contains opencode's clipboard pattern (`Set-Clipboard` + `In.ReadToEnd` /
-  `InputEncoding`), it `FreeConsole()`s itself, runs the *real* system PowerShell headless
-  (`DETACHED_PROCESS`, opencode's pipes stay connected as stdio), and returns its exit code;
-  every other invocation passes straight through with the same console. Result: no console-owning
-  child ever exits inside the TUI console, so the break never happens. The shim is picked up from
-  the fork's bin path precedence (`which("powershell.exe")` resolves to it inside cmder sessions).
+  `InputEncoding`), it runs the *real* system PowerShell with `CREATE_NO_WINDOW` (its own hidden
+  console: working message pump so `Set-Clipboard` actually commits, isolated from the TUI console
+  whose state ConEmuHk resets on child exit; opencode's pipes stay connected as stdio) and returns
+  its exit code; every other invocation passes straight through with the same console. Result: no
+  console-owning child ever exits inside the TUI console, so the break never happens. The shim is
+  picked up from the fork's bin path precedence (`which("powershell.exe")` resolves to it inside
+  cmder sessions). Attempted-and-rejected alternatives (silent no-op `DETACHED_PROCESS`, hostile
+  OSC/DECSET injection, resize jiggle) documented below.
 - **`vendor/bin/cmder_tui_guard.py`** (optional defense-in-depth, started by `vendor/init.bat`,
   disable with `CMDER_NO_TUI_GUARD=1`): resident watcher that re-asserts the TUI's expected console
   input-buffer mode (`0x0208`) if any console child stomps it. Catches the shared-mode variant of
