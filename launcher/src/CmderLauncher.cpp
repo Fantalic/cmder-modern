@@ -142,13 +142,18 @@ static void RegisterBundledFonts(const wchar_t* cmderRoot, const wchar_t* userCo
 		const wchar_t* file;
 		const wchar_t* regVal;
 	};
-	// nerd-fonts v3 family names are the short form ("JetBrainsMono NF"),
-	// which is also what GDI enumerates; ConEmu.xml must match this name.
+	// nerd-fonts v3 family names are the short form ("CaskaydiaCove NF");
+	// GDI enumerates that name, so ConEmu.xml must match verbatim. One
+	// registry value per file keeps every weight installed.
 	const FontEntry fonts[] = {
-		{ L"JetBrainsMonoNerdFont-Regular.ttf",	L"JetBrainsMono NF Regular (TrueType)" },
-		{ L"JetBrainsMonoNerdFont-Bold.ttf",	L"JetBrainsMono NF Bold (TrueType)" },
-		{ L"JetBrainsMonoNerdFont-Italic.ttf",	L"JetBrainsMono NF Italic (TrueType)" },
-		{ L"JetBrainsMonoNerdFont-BoldItalic.ttf", L"JetBrainsMono NF BoldItalic (TrueType)" },
+		{ L"CaskaydiaCoveNerdFont-Regular.ttf",		L"CaskaydiaCove NF Regular (TrueType)" },
+		{ L"CaskaydiaCoveNerdFont-Bold.ttf",		L"CaskaydiaCove NF Bold (TrueType)" },
+		{ L"CaskaydiaCoveNerdFont-Italic.ttf",		L"CaskaydiaCove NF Italic (TrueType)" },
+		{ L"CaskaydiaCoveNerdFont-BoldItalic.ttf",	L"CaskaydiaCove NF BoldItalic (TrueType)" },
+		{ L"JetBrainsMonoNerdFont-Regular.ttf",		L"JetBrainsMono NF Regular (TrueType)" },
+		{ L"JetBrainsMonoNerdFont-Bold.ttf",		L"JetBrainsMono NF Bold (TrueType)" },
+		{ L"JetBrainsMonoNerdFont-Italic.ttf",		L"JetBrainsMono NF Italic (TrueType)" },
+		{ L"JetBrainsMonoNerdFont-BoldItalic.ttf",	L"JetBrainsMono NF BoldItalic (TrueType)" },
 	};
 
 	for (const FontEntry& f : fonts)

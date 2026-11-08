@@ -12,8 +12,9 @@ This is an unofficial, modernized fork of Cmder. It keeps the ConEmu + Clink cor
 *modern* Windows CLI tooling render correctly out of the box:
 
 - Updated vendored builds: Clink 1.9.35 (with prompt/output sync fixes), clink-completions 0.6.9, git-for-windows 2.56.
-- Bundled JetBrains Mono Nerd Font with silent per-user auto-registration (no admin rights), so Braille spinners,
-  box drawing and Nerd icons render on first launch.
+- Bundled terminal-tuned Nerd Font (CaskaydiaCove NF, the Cascadia Code base) with silent per-user auto-registration
+  (no admin rights), so Braille spinners, box drawing, Nerd icons and block art render pixel-perfect on first launch;
+  JetBrains Mono NF ships as an opt-in alternative.
 - UTF-8 output defaults (`CmdOutputCP = 65001`) and inline autosuggest enabled.
 - Modern CLI tools shipped in `bin\`: fzf, eza, bat, ripgrep, fd, zoxide; wired via clink-fzf (Ctrl+T / Ctrl+R) and
   refreshed default aliases.

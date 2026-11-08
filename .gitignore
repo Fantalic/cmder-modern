@@ -13,11 +13,16 @@ vendor/*/*
 !vendor/psmodules/*
 vendor/git-for-windows
 vendor/fonts/*
+!vendor/fonts/CaskaydiaCoveNerdFont-Regular.ttf
+!vendor/fonts/CaskaydiaCoveNerdFont-Bold.ttf
+!vendor/fonts/CaskaydiaCoveNerdFont-Italic.ttf
+!vendor/fonts/CaskaydiaCoveNerdFont-BoldItalic.ttf
+!vendor/fonts/CascadiaCode-OFL.txt
 !vendor/fonts/JetBrainsMonoNerdFont-Regular.ttf
 !vendor/fonts/JetBrainsMonoNerdFont-Bold.ttf
 !vendor/fonts/JetBrainsMonoNerdFont-Italic.ttf
 !vendor/fonts/JetBrainsMonoNerdFont-BoldItalic.ttf
-!vendor/fonts/OFL.txt
+!vendor/fonts/JetBrainsMono-OFL.txt
 
 # Fork state: local agent/planning notes are not for publication
 .ai/

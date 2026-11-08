@@ -9,9 +9,18 @@ three independent causes. All three are fixed here:
 
 | Cause | Classic cmder | This fork |
 |---|---|---|
-| Terminal font | Consolas (no Braille, no Nerd glyphs) | **JetBrains Mono NF** vendored + auto-registered per-user |
+| Terminal font | Consolas (no Braille, no Nerd glyphs; half-block art aligned, though) | **CaskaydiaCove NF** (Cascadia Code base) vendored + auto-registered per-user; line-art stays pixel-perfect *and* glyphs/icons draw |
 | Output code page | system OEM (cp850 etc.) mangles UTF-8 | ConEmu `CmdOutputCP=65001` (UTF-8) |
 | Clink | 1.9.5 (Dec 2025) | **1.9.35** (Oct 2026) — includes DECSET sync-output fixes for prompt/suggestion flicker |
+
+Fonts and ConEmu cell math — why the default is CaskaydiaCove NF: ConEmu's GDI renderer fits glyphs
+into cells using the font's vertical metrics. Fonts whose baseline overshoots the requested pixel height
+(e.g. JetBrains Mono: ~22 px of metrics at a 16 px cell) land the baseline *fractionally* inside the cell,
+which displaces half-block characters (`U+2580/2584/258C/2590`) by one raster line — invisible in normal
+text, glaring in terminal block art (the opencode wordmark, lattice tables, progress bars). CaskaydiaCove
+NF uses terminal-tuned metrics that fit cells exactly, keeping block art aligned; NF glyphs (icons) draw
+identically in both. JetBrains Mono NF ships anyway as an opt-in for users who prefer its look and accept
+the 1-px seams, or use other renderers (Windows Terminal handles it fine).
 
 ## What changed vs upstream
 
@@ -21,18 +30,19 @@ three independent causes. All three are fixed here:
      the dormant project's Alpha channel is older than stable).
    - Removed the vendored windows-terminal entry (~30 MB dead weight; Windows Terminal integration is untouched and still
      possible via the cmder wiki).
-2. **Bundled font + auto-registration**
-   - `vendor/fonts/` carries 4 JetBrainsMono NF weights (Regular/Bold/Italic/BoldItalic) + OFL license, fetched from
-     ryanoasis/nerd-fonts tag v3.5.1 (patched-fonts/JetBrainsMono/Ligatures — note: NF v3 family names are the short
-     forms: **"JetBrainsMono NF"**, not "JetBrainsMono Nerd Font"; GDI enumerates the ID-1 name, so all config references
-     use the short name).
-   - `vendor/bin/cmder_font.cmd` installs per-user (copy to `%LOCALAPPDATA%\Microsoft\Windows\Fonts` + `HKCU` font
-     registry value — no admin needed on Win10 1809+), stamps `config\fonts_installed`, refreshes GDI with
-     `AddFontResourceW` + `WM_FONTCHANGE`, and becomes a no-op afterwards.
+2. **Bundled fonts + auto-registration**
+   - `vendor/fonts/` carries 4 weights each (Regular/Bold/Italic/BoldItalic) of **CaskaydiaCove NF** (`patched-fonts/CascadiaCode`,
+     the default) and **JetBrains Mono NF** (`patched-fonts/JetBrainsMono/Ligatures`, opt-in), plus the OFL licenses
+     (CascadiaCode-OFL.txt, JetBrainsMono-OFL.txt), all fetched from ryanoasis/nerd-fonts tag v3.5.1 — note: NF v3 family
+     names are the short forms (**"CaskaydiaCove NF"**, **"JetBrainsMono NF"**), not the v2 long names; GDI enumerates the
+     ID-1 name table entry, so all config references must use the short names verbatim.
+   - `vendor/bin/cmder_font.cmd` installs per-user (copy to `%LOCALAPPDATA%\Microsoft\Windows\Fonts` + one `HKCU` registry
+     value per file with the style in the value name — no admin needed on Win10 1809+), stamps `config\fonts_installed`,
+     refreshes GDI with `AddFontResourceW` + `WM_FONTCHANGE`, and becomes a no-op afterwards.
    - The launcher (`cmder.exe`) runs the same registration *before* ConEmu starts, so even the very first session renders
      glyphs (see `RegisterBundledFonts` in `launcher/src/CmderLauncher.cpp`).
-3. **`vendor/ConEmu.xml.default`** — `FontName`/`ConsoleFontName` = `JetBrainsMono NF`, `FontName2` = `Cascadia Mono`
-   (system fallback), `CmdOutputCP` = 65001. ANSI processing (`ProcessAnsi`) was already on upstream.
+3. **`vendor/ConEmu.xml.default`** — `FontName`/`ConsoleFontName` = `CaskaydiaCove NF`, `FontName2` = `JetBrainsMono NF`
+   (fallback), `CmdOutputCP` = 65001. ANSI processing (`ProcessAnsi`) was already on upstream.
 4. **`vendor/clink_settings.default`** — enables inline autosuggest (`autosuggest.enable = True`, strategy
    `history popups files_end_with completion`) on top of upstream defaults. Tab-completion behavior unchanged.
 5. **Modern CLI toolset, vendored flat in `bin\`** (upstream's documented runtime drop-in; `.gitignore`d):
@@ -86,7 +96,8 @@ three independent causes. All three are fixed here:
 | ConEmu (vendored) | BSD | As vendored upstream |
 | Clink | GPL-3.0 | Vendored binary; source obtainable from github.com/chrisant996/clink, satisfying binary-distribution obligations |
 | git-for-windows | GPLv2 | As vendored upstream |
-| JetBrains Mono NF (vendored TTFs) | OFL 1.1 (vendor/fonts/OFL.txt) | Redistribution permitted with the license kept |
+| CaskaydiaCove NF (vendored TTFs) | OFL 1.1 (vendor/fonts/CascadiaCode-OFL.txt) | Redistribution permitted with the license kept |
+| JetBrains Mono NF (vendored TTFs) | OFL 1.1 (vendor/fonts/JetBrainsMono-OFL.txt) | Redistribution permitted with the license kept |
 | fzf, eza, bat, ripgrep, fd, zoxide | MIT / Apache-2.0 | Runtime `bin\` binaries (release zips); binaries not committed to git, license info lives here |
 | Icons | MIT | Drawn from scratch programmatically; not derived from the upstream PSD; λ typeset in the OFL font (allowed use) |
 
