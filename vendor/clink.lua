@@ -8,6 +8,7 @@
 -- luacheck: globals prompt_homeSymbol prompt_lambSymbol prompt_type prompt_useHomeSymbol prompt_useUserAtHost
 -- luacheck: globals prompt_singleLine prompt_includeVersionControl
 -- luacheck: globals prompt_overrideGitStatusOptIn
+-- luacheck: globals cmder_banner
 -- luacheck: globals clink io.popenyield os.isdir settings.get
 
 -- At first, load the original clink.lua file
@@ -809,3 +810,50 @@ if clink.get_env('CMDER_USER_CONFIG') then
         dofile(filename)
     end
 end
+
+---
+-- Startup banner.
+--
+-- The art is plain SGR text: colored half-block mosaics (U+2580) plus a few
+-- ordinary characters. That keeps it independent of the console font and of
+-- the Windows console host, which cannot store non-BMP codepoints at all.
+-- It is printed once per shell, right before the first prompt.
+--
+-- Switches: CMDER_NO_BANNER=1 in the environment, or cmder_banner = false in
+-- the prompt config.
+---
+local banner_printed = false
+
+local function show_banner()
+    if banner_printed then
+        return
+    end
+    banner_printed = true
+
+    if cmder_banner == false then
+        return
+    end
+
+    local disabled = clink.get_env('CMDER_NO_BANNER')
+    if disabled and disabled ~= '' and disabled ~= '0' then
+        return
+    end
+
+    local root = clink.get_env('CMDER_ROOT')
+    if not root then
+        return
+    end
+
+    local file = io.open(root..'\\vendor\\art\\cmder_banner.ans', 'rb')
+    if not file then
+        return
+    end
+    local art = file:read('*a')
+    file:close()
+
+    if art and #art > 0 then
+        io.write(art)
+    end
+end
+
+clink.onbeginedit(show_banner)

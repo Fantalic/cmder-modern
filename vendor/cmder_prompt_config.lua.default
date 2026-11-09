@@ -38,6 +38,12 @@ prompt_includeVersionControl = true
  -- NOTE: This only takes effect if using Clink v1.2.10 or higher.
 prompt_overrideGitStatusOptIn = false
 
+-- OPTIONAL. Show the ANSI art banner once, right before the first prompt.
+ -- default is true
+ -- The banner is plain SGR text (colored half-block mosaics), so it needs no
+ -- special font support. Set CMDER_NO_BANNER=1 to hide it for a session.
+cmder_banner = true
+
 -- Prompt Attributes
 --
 -- Colors: https://github.com/cmderdev/cmder/wiki/Customization#list-of-colors

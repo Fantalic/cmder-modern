@@ -1,9 +1,10 @@
-"""Patch vendored CaskaydiaCove NF: remove glyphs whose NF-patch design renders
-badly under ConEmu's monospace cell math, so ConEmu's FontName2 fallback (and
-the GDI font-link fallback) picks a well-designed symbol font instead.
+"""Patch vendored CaskaydiaCove NF: remove glyphs whose design renders badly
+under ConEmu's monospace cell math.
 
-The strip list is deliberately small and evidenced; add entries only after a
-coverage + render comparison. Run after every vendor/font refresh:
+Nothing is stripped today. The vendored fonts now carry on-grid Noto designs
+for U+25A3 and U+2B1D (see scripts/font_surgery.py), so removing them would
+bring back the GDI fallback drift they used to cause. The strip list stays as
+the single place for future evictions after a coverage + render comparison.
 
     python scripts/patch_fonts.py
 """
@@ -16,11 +17,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 FONT_DIR = os.path.join(os.path.dirname(HERE), "vendor", "fonts")
 TARGET = "CaskaydiaCoveNerdFont"
 
-# U+25A3 (WHITE SQUARE CONTAINING SMALL BLACK SQUARE; opencode message footer
-# badge) and U+2B1D (BLACK MEDIUM SMALL SQUARE; opencode status spinner inactive
-# dot). CaskaydiaCove's NF-patch designs for these two sit off-grid under
-# ConEmu; Segoe UI Symbol draws them correctly.
-STRIP = [0x25A3, 0x2B1D]
+# Glyphs to remove from the vendored font. U+25A3 (message footer badge) and
+# U+2B1D (status spinner dot) were evicted while the font lacked on-grid
+# designs for them; scripts/font_surgery.py now supplies both.
+STRIP = []
 
 
 def strip_glyph(font_path, strip):
@@ -35,7 +35,8 @@ def strip_glyph(font_path, strip):
                 del table.cmap[code]
                 removed.append("fmt%d:U+%04X" % (table.format, code))
 
-    font.save(font_path)
+    if removed:
+        font.save(font_path)
     return removed
 
 

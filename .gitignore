@@ -15,6 +15,7 @@ opt/*
 vendor/*/*
 !vendor/bin/*
 !vendor/lib/*
+!vendor/art/*
 !vendor/*
 !vendor/psmodules/*
 vendor/git-for-windows
@@ -29,6 +30,8 @@ vendor/fonts/*
 !vendor/fonts/JetBrainsMonoNerdFont-Italic.ttf
 !vendor/fonts/JetBrainsMonoNerdFont-BoldItalic.ttf
 !vendor/fonts/JetBrainsMono-OFL.txt
+!vendor/fonts/NotoSansSymbols2-OFL.txt
+!vendor/fonts/NotoEmoji-OFL.txt
 
 # Fork state: local agent/planning notes are not for publication
 .ai/
